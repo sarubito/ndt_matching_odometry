@@ -57,6 +57,7 @@ extern "C" {
 #include <pcl/registration/ndt.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/approximate_voxel_grid.h>
 
 
 namespace ndt_matching_odometry
@@ -71,7 +72,9 @@ namespace ndt_matching_odometry
         private:
             void velodyne_callback(const sensor_msgs::msg::PointCloud2::SharedPtr data);
             void slam_pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr data);
-            void convert_msgtopointcloud();
+            void convert_msgtopointcloud(void);
+            void calc_NormalDistributionsTransform(void);
+            void voxcel_filter(void);
 
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr velodyne_subscription_;
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_subscription_;
@@ -84,6 +87,11 @@ namespace ndt_matching_odometry
 
             pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
             pcl::PointCloud<pcl::PointXYZ>::Ptr map_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_filtered_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            pcl::PointCloud<pcl::PointXYZ>::Ptr map_filtered_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            pcl::ApproximateVoxelGrid<pcl::PointXYZ> approximate_voxel_filter_;
+
+            pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt_;
 
 
 

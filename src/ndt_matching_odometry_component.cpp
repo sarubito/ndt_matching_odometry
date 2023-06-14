@@ -19,10 +19,29 @@ namespace ndt_matching_odometry
         map_ = *data;
     }
 
-    void NDTMatchingOdometry::convert_msgtopointcloud()
+    void NDTMatchingOdometry::convert_msgtopointcloud(void)
     {
         pcl::fromROSMsg(velodyne_ ,*velodyne_point_);
         pcl::fromROSMsg(map_ ,*map_point_);
+    }
+
+    void NDTMatchingOdometry::voxcel_filter(void)
+    {
+        approximate_voxel_filter_.setLeafSize(0.2, 0.2, 0.2);
+        approximate_voxel_filter_.setInputCloud(velodyne_point_);
+        approximate_voxel_filter_.filter (*velodyne_filtered_cloud_);
+        approximate_voxel_filter_.filter (*map_filtered_cloud_);
+
+    }
+
+    void NDTMatchingOdometry::calc_NormalDistributionsTransform(void)
+    {
+        ndt_.setTransformationEpsilon(0.01);
+        ndt_.setStepSize(0.1);
+        ndt_.setResolution(1.0);
+        ndt_.setMaximumIterations(35);
+        ndt_.setInputSource(velodyne_filtered_cloud_);
+        ndt_.setInputTarget(map_filtered_cloud_);
     }
 
     NDTMatchingOdometry::~NDTMatchingOdometry(void){}
