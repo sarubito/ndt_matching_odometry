@@ -51,6 +51,13 @@ extern "C" {
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/registration/ndt.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/voxel_grid.h>
+
 
 namespace ndt_matching_odometry
 {
@@ -62,17 +69,23 @@ namespace ndt_matching_odometry
             virtual ~NDTMatchingOdometry(void);
 
         private:
-            rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr velodyne_pointcloud_;
-            rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr slam_pointcloud_;
-
             void velodyne_callback(const sensor_msgs::msg::PointCloud2::SharedPtr data);
             void slam_pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr data);
+            void convert_msgtopointcloud();
+
+            rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr velodyne_subscription_;
+            rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_subscription_;
 
             rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr ndt_odom_;
             rclcpp::TimerBase::SharedPtr timer_;
 
             sensor_msgs::msg::PointCloud2 velodyne_;
             sensor_msgs::msg::PointCloud2 map_;
+
+            pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            pcl::PointCloud<pcl::PointXYZ>::Ptr map_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+
+
 
     };
 }

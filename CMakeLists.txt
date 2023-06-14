@@ -17,6 +17,7 @@ find_package(tf2_ros REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ament_cmake_auto REQUIRED)
 find_package(PCL 1.2 REQUIRED)
+find_package(pcl_conversions REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 ament_auto_find_build_dependencies()
@@ -38,6 +39,8 @@ ament_auto_add_executable(ndt_matching_odometry_node
   src/ndt_matching_odometry_component.cpp
   src/ndt_matching_odometry_node.cpp
 )
+
+target_link_libraries(ndt_matching_odometry_node ${PCL_LIBRARIES})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
