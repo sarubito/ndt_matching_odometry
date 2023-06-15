@@ -49,6 +49,8 @@ extern "C" {
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
 #include <pcl/point_cloud.h>
@@ -59,6 +61,7 @@ extern "C" {
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 
+using namespace std::chrono_literals;
 
 namespace ndt_matching_odometry
 {
@@ -72,18 +75,26 @@ namespace ndt_matching_odometry
         private:
             void velodyne_callback(const sensor_msgs::msg::PointCloud2::SharedPtr data);
             void slam_pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr data);
+            void odometry_callback(const nav_msgs::msg::Odometry::SharedPtr data);
             void convert_msgtopointcloud(void);
             void calc_NormalDistributionsTransform(void);
             void voxcel_filter(void);
+            void initialpose(void);
+            void process(void);
+            Eigen::Quaternionf convertMsgtoEigen(void);
+            geometry_msgs::msg::Quaternion convertEigentoMsg(Eigen::Quaternionf q_eigen);
 
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr velodyne_subscription_;
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_subscription_;
+            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscription_;
 
-            rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr ndt_odom_;
+            rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ndt_pose_publisher_;
             rclcpp::TimerBase::SharedPtr timer_;
 
             sensor_msgs::msg::PointCloud2 velodyne_;
             sensor_msgs::msg::PointCloud2 map_;
+            nav_msgs::msg::Odometry robot_odometry_;
+            geometry_msgs::msg::PoseStamped ndt_pose_;
 
             pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
             pcl::PointCloud<pcl::PointXYZ>::Ptr map_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
@@ -92,8 +103,11 @@ namespace ndt_matching_odometry
             pcl::ApproximateVoxelGrid<pcl::PointXYZ> approximate_voxel_filter_;
 
             pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt_;
+            pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
-
+            Eigen::Translation3f translation;
+            Eigen::AngleAxisf rotation;
+            Eigen::Matrix4f guess;
 
     };
 }
