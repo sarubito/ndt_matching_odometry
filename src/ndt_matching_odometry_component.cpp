@@ -4,8 +4,8 @@ namespace ndt_matching_odometry
 {
     NDTMatchingOdometry::NDTMatchingOdometry(const rclcpp::NodeOptions & options) : Node("ndt_matching_odometry", options)
     {
-        velodyne_subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("velodyne", 10, std::bind(&NDTMatchingOdometry::velodyne_callback, this, std::placeholders::_1));
-        map_subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("velodyne", 10, std::bind(&NDTMatchingOdometry::slam_pointcloud_callback, this, std::placeholders::_1));
+        velodyne_subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/velodyne_points", 10, std::bind(&NDTMatchingOdometry::velodyne_callback, this, std::placeholders::_1));
+        map_subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/map_pointcloud", 10, std::bind(&NDTMatchingOdometry::slam_pointcloud_callback, this, std::placeholders::_1));
         odometry_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>("/odom", 10, std::bind(&NDTMatchingOdometry::odometry_callback, this, std::placeholders::_1));
         ndt_pose_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/ndt_pose", 10);
         timer_ = this->create_wall_timer(500ms, std::bind(&NDTMatchingOdometry::process, this));
@@ -34,19 +34,31 @@ namespace ndt_matching_odometry
 
     void NDTMatchingOdometry::voxcel_filter(void)
     {
-        approximate_voxel_filter_.setLeafSize(0.2, 0.2, 0.2);
-        approximate_voxel_filter_.setInputCloud(velodyne_point_);
-        approximate_voxel_filter_.filter (*velodyne_filtered_cloud_);
-        approximate_voxel_filter_.filter (*map_filtered_cloud_);
+        voxel_filter_.setInputCloud(velodyne_point_);
+        voxel_filter_.setLeafSize(0.1, 0.1, 0.1);
+        voxel_filter_.filter(*velodyne_filtered_cloud_);
+        voxel_filter_.setInputCloud(map_point_);
+        voxel_filter_.setLeafSize(0.1, 0.1, 0.1);
+        voxel_filter_.filter(*map_filtered_cloud_);
+
+        RCLCPP_INFO(this->get_logger(), "velodyne point_width : %d", velodyne_point_->width);
+        RCLCPP_INFO(this->get_logger(), "velodyne point_height : %d", velodyne_point_->height);
+        RCLCPP_INFO(this->get_logger(), "velodyne filtered_width : %d", velodyne_filtered_cloud_->width);
+        RCLCPP_INFO(this->get_logger(), "velodyne filtered_height : %d", velodyne_filtered_cloud_->height);
 
     }
 
+    // void NDTMatchingOdometry::RangeFilter(void)
+    // {
+
+    // }
+
     void NDTMatchingOdometry::calc_NormalDistributionsTransform(void)
     {
-        ndt_.setTransformationEpsilon(0.01);
+        ndt_.setTransformationEpsilon(1.0e-8);
         ndt_.setStepSize(0.1);
         ndt_.setResolution(1.0);
-        ndt_.setMaximumIterations(35);
+        ndt_.setMaximumIterations(100);
         ndt_.setInputSource(velodyne_filtered_cloud_);
         ndt_.setInputTarget(map_filtered_cloud_);
         translation = {robot_odometry_.pose.pose.position.x, robot_odometry_.pose.pose.position.y, robot_odometry_.pose.pose.position.z};
@@ -84,6 +96,8 @@ namespace ndt_matching_odometry
 
     void NDTMatchingOdometry::process(void)
     {
+        convert_msgtopointcloud();
+        voxcel_filter();
         calc_NormalDistributionsTransform();
         ndt_pose_.header.frame_id = "ndt";
         ndt_pose_.header.stamp = this->get_clock()->now();

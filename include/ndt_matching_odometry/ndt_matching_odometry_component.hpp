@@ -100,7 +100,7 @@ namespace ndt_matching_odometry
             pcl::PointCloud<pcl::PointXYZ>::Ptr map_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
             pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_filtered_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
             pcl::PointCloud<pcl::PointXYZ>::Ptr map_filtered_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-            pcl::ApproximateVoxelGrid<pcl::PointXYZ> approximate_voxel_filter_;
+            pcl::VoxelGrid<pcl::PointXYZ> voxel_filter_;
 
             pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt_;
             pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
