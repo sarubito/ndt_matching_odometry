@@ -80,6 +80,7 @@ namespace ndt_matching_odometry
             void calc_NormalDistributionsTransform(void);
             void voxcel_filter(void);
             void initialpose(void);
+            void RangeFilter(void);
             void process(void);
             Eigen::Quaternionf convertMsgtoEigen(void);
             geometry_msgs::msg::Quaternion convertEigentoMsg(Eigen::Quaternionf q_eigen);
@@ -98,8 +99,10 @@ namespace ndt_matching_odometry
 
             pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
             pcl::PointCloud<pcl::PointXYZ>::Ptr map_point_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_range_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
             pcl::PointCloud<pcl::PointXYZ>::Ptr velodyne_filtered_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
             pcl::PointCloud<pcl::PointXYZ>::Ptr map_filtered_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+
             pcl::VoxelGrid<pcl::PointXYZ> voxel_filter_;
 
             pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt_;

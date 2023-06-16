@@ -32,26 +32,34 @@ namespace ndt_matching_odometry
         pcl::fromROSMsg(map_ ,*map_point_);
     }
 
+    void NDTMatchingOdometry::RangeFilter(void)
+    {
+        pcl::PassThrough<pcl::PointXYZ> pass;
+        pass.setInputCloud(velodyne_point_);
+        pass.setFilterFieldName("x");
+        pass.setFilterLimits(-100.0, 100.0);
+        pass.filter(*velodyne_range_cloud_);
+        pass.setInputCloud(velodyne_range_cloud_);
+        pass.setFilterFieldName("y");
+        pass.setFilterLimits(-100.0, 100.0);
+        pass.filter(*velodyne_range_cloud_);
+    }
+
     void NDTMatchingOdometry::voxcel_filter(void)
     {
-        voxel_filter_.setInputCloud(velodyne_point_);
-        voxel_filter_.setLeafSize(0.1, 0.1, 0.1);
+        voxel_filter_.setInputCloud(velodyne_range_cloud_);
+        voxel_filter_.setLeafSize(0.5, 0.5, 0.5);
         voxel_filter_.filter(*velodyne_filtered_cloud_);
         voxel_filter_.setInputCloud(map_point_);
-        voxel_filter_.setLeafSize(0.1, 0.1, 0.1);
+        voxel_filter_.setLeafSize(0.5, 0.5, 0.5);
         voxel_filter_.filter(*map_filtered_cloud_);
 
-        RCLCPP_INFO(this->get_logger(), "velodyne point_width : %d", velodyne_point_->width);
-        RCLCPP_INFO(this->get_logger(), "velodyne point_height : %d", velodyne_point_->height);
+        RCLCPP_INFO(this->get_logger(), "velodyne point_width : %d", velodyne_range_cloud_->width);
+        RCLCPP_INFO(this->get_logger(), "velodyne point_height : %d", velodyne_range_cloud_->height);
         RCLCPP_INFO(this->get_logger(), "velodyne filtered_width : %d", velodyne_filtered_cloud_->width);
         RCLCPP_INFO(this->get_logger(), "velodyne filtered_height : %d", velodyne_filtered_cloud_->height);
 
     }
-
-    // void NDTMatchingOdometry::RangeFilter(void)
-    // {
-
-    // }
 
     void NDTMatchingOdometry::calc_NormalDistributionsTransform(void)
     {
@@ -97,6 +105,7 @@ namespace ndt_matching_odometry
     void NDTMatchingOdometry::process(void)
     {
         convert_msgtopointcloud();
+        RangeFilter();
         voxcel_filter();
         calc_NormalDistributionsTransform();
         ndt_pose_.header.frame_id = "ndt";
